@@ -1,15 +1,27 @@
 import { db } from "@/lib/db";
 import { Language, Snippet, Technology } from "@prisma/client";
 import { z } from 'zod';
+import { checkCredentials } from "../utils";
+import { auth } from "@clerk/nextjs";
 
-const readAllSnippetSchema = z.object({
-  title : z.string().optional(),
-  content: z.string().optional(),
-  language: z.nativeEnum(Language).optional(),
-  technology: z.nativeEnum(Technology).optional(),
-}).refine((data)=>Object.values(data).some((value => value !== undefined)));
+const readAllSnippetSchema = z
+  .object({
+    title : z.string().optional(),
+    content: z.string().optional(),
+    language: z.nativeEnum(Language).optional(),
+    technology: z.nativeEnum(Technology).optional(),
+  })
+  .optional();
 
-export async function readAllSnippet(filters: Partial<Snippet>) {
+export async function readAllSnippet(filters?: Partial<Snippet>) {
+  if(!auth().userId){
+    return {
+      error: true,
+      status: 401,
+      message: 'You must be logged in',
+    }
+  }
+
   try {
     readAllSnippetSchema.parse(filters);
     return await db.snippet.findMany(
@@ -35,6 +47,13 @@ const createSnippedSchema = z.object({
   technology: z.nativeEnum(Technology),
 });
 export async function createSnippet(body: Omit<Snippet, 'id'>){
+  if(!auth().userId){
+    return {
+      error: true,
+      status: 401,
+      message: 'You must be logged in',
+    }
+  }
   try{
     readAllSnippetSchema.parse(body);
     return await db.snippet.create({data: body});
