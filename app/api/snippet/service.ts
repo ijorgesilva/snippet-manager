@@ -12,6 +12,13 @@ const readAllSnippetSchema = z.object({
 export async function readAllSnippet(filters: Partial<Snippet>) {
   try {
     readAllSnippetSchema.parse(filters);
+    return await db.snippet.findMany(
+      { 
+        where: {
+          ...filters
+        }
+      }
+    );
   } catch(e){
     return { 
       error: true,
@@ -19,13 +26,6 @@ export async function readAllSnippet(filters: Partial<Snippet>) {
       message:'Wrong filter provided'+e,
     };
   }
-  return await db.snippet.findMany(
-    { 
-      where: {
-        ...filters
-      }
-    }
-  );
 }
 
 const createSnippedSchema = z.object({
@@ -35,16 +35,8 @@ const createSnippedSchema = z.object({
   technology: z.nativeEnum(Technology),
 });
 export async function createSnippet(body: Omit<Snippet, 'id'>){
-  try {
-    readAllSnippetSchema.parse(body);
-  } catch(e){
-    return { 
-      error: true,
-      status: 500,
-      message:'Missing or wrong data '+e,
-    };
-  }
   try{
+    readAllSnippetSchema.parse(body);
     return await db.snippet.create({data: body});
   }
   catch(err){
